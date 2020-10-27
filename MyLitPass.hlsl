@@ -13,6 +13,7 @@ SAMPLER(sampler_BaseMap);
 UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
     UNITY_DEFINE_INSTANCED_PROP(float4, _BaseColor)
+    UNITY_DEFINE_INSTANCED_PROP(float, _Cutoff)
 UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
 
 struct Attributes{
@@ -43,6 +44,8 @@ Varyings LitPassVertex(Attributes input){
     //UNITY_TRANSFER_INSTANCE_ID(input, output);
     output.positionWS = TransformObjectToWorld(input.positionOS);
     output.positionCS = TransformWorldToHClip(output.positionWS);
+    output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+
     output.baseUV = TransformBaseUV(input.baseUV);
     return output;
 }
@@ -52,6 +55,18 @@ float4 LitPassFragment(Varyings input):SV_TARGET{
     float4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.baseUV);
     float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
     float4 color = baseMap * baseColor;
+    #if defined(_CLIPPING)
+        clip(base.a - INPUT_PROP(UnityPerMaterial, _Cutoff));
+    #endif
+
+    Surface surface;
+    surface.normal = normalize(input.normalWS);
+    surface.viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
+    surface.color = base.rgb;
+    surface.alpha = base.a;
+    surface.metallic = INPUT_PROP(UnityPerMaterial, _Metallic);
+    surface.smoothness = INPUT_PROP(UnityPerMaterial, _Smoothness);
+
     return color;
 }
 
