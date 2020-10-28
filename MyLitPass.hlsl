@@ -2,9 +2,13 @@
 #define PIXAR_LIT_PASS_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
 #include "Common.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
+
+#include "MyBRDF.hlsl"
+#include "MyLighting.hlsl"
 
 
 TEXTURE2D(_BaseMap);
@@ -67,7 +71,13 @@ float4 LitPassFragment(Varyings input):SV_TARGET{
     surface.metallic = INPUT_PROP(UnityPerMaterial, _Metallic);
     surface.smoothness = INPUT_PROP(UnityPerMaterial, _Smoothness);
 
-    return color;
+    #if defined(_PREMULTIPLY_ALPHA)
+        BRDF brdf = GetBRDF(surface, true);
+    #else
+        BRDF brdf = GetBRDF(surface);
+    #endif
+    float3 color = GetLighting(surface, brdf);
+    return float4(color, surface.alpha);
 }
 
 #endif

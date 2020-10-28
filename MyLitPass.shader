@@ -19,6 +19,7 @@ Shader "PixarRenderPipeline/MyLit"{
             //#pragma multi_compile_instancing
             #pragma enable_d3d11_debug_symbols
             #pragma shader_feature _CLIPPING
+            #pragma shader_feature _PREMULTIPLY_ALPHA
             #pragma vertex LitPassVertex
             #pragma fragment LitPassFragment
             #include "MyLitPass.hlsl"
