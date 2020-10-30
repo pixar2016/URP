@@ -42,4 +42,8 @@ float3 _WorldSpaceCameraPos;
 #define UNITY_MATRIX_VP unity_MatrixVP
 #define UNITY_MATRIX_P glstate_matrix_projection
 
+float DistanceSquared(float3 pA, float3 pB){
+    return dot(pA - pB, pA - pB);
+}
+
 #endif

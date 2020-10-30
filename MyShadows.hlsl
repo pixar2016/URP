@@ -44,6 +44,7 @@ ShadowData GetShadowData(Surface surface){
     int i;
     for(i = 0; i < _CascadeCount; i++){
         float4 sphere = _CascadeCullingSpheres[i];
+        float distanceSqr = DistanceSquared(surface.position, sphere.xyz);
     }
 }
 
