@@ -1,7 +1,8 @@
 #ifndef PIXAR_SURFACE_INCLUDED
 #define PIXAR_SURFACE_INCLUDED
 
-struct Surface{
+struct Surface
+{
     float3 normal;
     float3 viewDirection;
     float3 color;
@@ -11,6 +12,6 @@ struct Surface{
     float fresnelStrength;
     float occlusion;
     float depth;
-}
+};
 
 #endif

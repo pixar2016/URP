@@ -28,24 +28,26 @@ struct ShadowData{
     ShadowMask shadowMask;
 };
 
-struct DirectionalShadowData{
+struct DirectionalShadowData
+{
     float strength;
     int tileIndex;
     float normalBias;
     int shadowMaskChannel;
-}
+};
 
 ShadowData GetShadowData(Surface surface){
-    ShaodwData data;
+    ShadowData data;
     data.shadowMask.always = false;
     data.shadowMask.distance = false;
     data.shadowMask.shadows = 1.0;
     data.cascadeBlend = 1.0;
     int i;
-    for(i = 0; i < _CascadeCount; i++){
-        float4 sphere = _CascadeCullingSpheres[i];
-        float distanceSqr = DistanceSquared(surface.position, sphere.xyz);
-    }
+    //for(i = 0; i < _CascadeCount; i++){
+    //    float4 sphere = _CascadeCullingSpheres[i];
+    //    float distanceSqr = DistanceSquared(surface.position, sphere.xyz);
+    //}
+    return data;
 }
 
 #endif

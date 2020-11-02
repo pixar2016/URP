@@ -1,12 +1,14 @@
 #ifndef PIXAR_LIT_PASS_INCLUDED
 #define PIXAR_LIT_PASS_INCLUDED
 
+#include "MySurface.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
 #include "Common.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
 #include "MyShadows.hlsl"
+#include "MyLight.hlsl"
 #include "MyBRDF.hlsl"
 #include "MyGI.hlsl"
 #include "MyLighting.hlsl"
@@ -58,10 +60,10 @@ Varyings LitPassVertex(Attributes input){
 float4 LitPassFragment(Varyings input):SV_TARGET{
     //UNITY_SETUP_INSTANCE_ID(input);
     float4 baseMap = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.baseUV);
-    float4 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
+    float4 baseColor = INPUT_PROP(_BaseColor);
     float4 color = baseMap * baseColor;
     #if defined(_CLIPPING)
-        clip(base.a - INPUT_PROP(UnityPerMaterial, _Cutoff));
+        clip(base.a - INPUT_PROP(_Cutoff));
     #endif
 
     Surface surface;
@@ -69,17 +71,18 @@ float4 LitPassFragment(Varyings input):SV_TARGET{
     surface.viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
     surface.color = base.rgb;
     surface.alpha = base.a;
-    surface.metallic = INPUT_PROP(UnityPerMaterial, _Metallic);
-    surface.smoothness = INPUT_PROP(UnityPerMaterial, _Smoothness);
+    surface.metallic = INPUT_PROP(_Metallic);
+    surface.smoothness = INPUT_PROP(_Smoothness);
 
     #if defined(_PREMULTIPLY_ALPHA)
         BRDF brdf = GetBRDF(surface, true);
     #else
         BRDF brdf = GetBRDF(surface);
     #endif
-    GI gi = GetGI(GI_FRAGMENT_DATA(input), surface, brdf);
-    float3 color = GetLighting(surface, brdf, gi);
-    return float4(color, surface.alpha);
+    //GI gi = GetGI(GI_FRAGMENT_DATA(input), surface, brdf);
+    //float3 color = GetLighting(surface, brdf, gi);
+    //return float4(color, surface.alpha);
+    return 1.0;
 }
 
 #endif

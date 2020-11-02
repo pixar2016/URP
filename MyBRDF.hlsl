@@ -1,12 +1,13 @@
 #ifndef PIXAR_BRDF_INCLUDED
 #define PIXAR_BRDF_INCLUDED
 
-struct BRDF{
+struct BRDF
+{
     float3 diffuse;
     float3 specular;
     float roughness;
     float fresnel;
-}
+};
 
 #define MIN_REFLECTIVITY 0.04
 
