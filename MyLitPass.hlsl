@@ -6,8 +6,9 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
 #include "Common.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
-
+#include "MyShadows.hlsl"
 #include "MyBRDF.hlsl"
+#include "MyGI.hlsl"
 #include "MyLighting.hlsl"
 
 
@@ -76,7 +77,8 @@ float4 LitPassFragment(Varyings input):SV_TARGET{
     #else
         BRDF brdf = GetBRDF(surface);
     #endif
-    float3 color = GetLighting(surface, brdf);
+    GI gi = GetGI(GI_FRAGMENT_DATA(input), surface, brdf);
+    float3 color = GetLighting(surface, brdf, gi);
     return float4(color, surface.alpha);
 }
 

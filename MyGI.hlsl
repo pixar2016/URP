@@ -16,6 +16,12 @@ SAMPLER(samplerunity_ProbeVolumeSH);
 TEXTURECUBE(unity_SpecCube0);
 SAMPLER(samplerunity_SpecCube0);
 
+#if defined(LIGHTMAP_ON)
+    #define GI_FRAGMENT(input) input.lightMapUV
+#else
+    #define GI_FRAGMENT(input) 0.0
+#endif
+
 struct GI{
     float3 diffuse;
     float3 specular;
