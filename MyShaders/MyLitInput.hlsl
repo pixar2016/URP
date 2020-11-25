@@ -1,4 +1,4 @@
-#ifdef PIXAR_LIT_INPUT_INCLUDED
+#ifndef PIXAR_LIT_INPUT_INCLUDED
 #define PIXAR_LIT_INPUT_INCLUDED
 
 TEXTURE2D(_BaseMap);
@@ -29,7 +29,7 @@ float2 TransformBaseUV(float2 baseUV){
 float4 GetBase(float2 baseUV){
     float4 map = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, baseUV);
     float4 color = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor);
-    return map.rgb * color.rgb;
+    return map * color;
 }
 
 float3 GetEmission(float2 baseUV){
@@ -55,7 +55,7 @@ float GetFresnel(float2 baseUV){
 }
 
 float GetOcclusion(float2 baseUV){
-    return UNITY_ACCESS_INSTANCED_PROP(UntiyPerMaterial, _Occlusion);
+    return UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _Occlusion);
 }
 
 #endif

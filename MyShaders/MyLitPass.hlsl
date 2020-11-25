@@ -2,11 +2,7 @@
 #define PIXAR_LIT_PASS_INCLUDED
 
 #include "MySurface.hlsl"
-#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
-#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
-#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
 #include "Common.hlsl"
-#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/SpaceTransforms.hlsl"
 #include "MyShadows.hlsl"
 #include "MyLight.hlsl"
 #include "MyBRDF.hlsl"
