@@ -44,7 +44,7 @@ float4 LitPassFragment(Varyings input):SV_TARGET{
     UNITY_SETUP_INSTANCE_ID(input);
     float4 base = GetBase(input.baseUV);
     #if defined(_CLIPPING)
-        clip(base.a - GetCutoff(input.baseUV));
+            clip(base.a - GetCutoff(input.baseUV));
     #endif
 
     Surface surface;
@@ -62,7 +62,7 @@ float4 LitPassFragment(Varyings input):SV_TARGET{
     surface.dither = InterleavedGradientNoise(input.positionCS.xy, 0);
 
     #if defined(_PREMULTIPLY_ALPHA)
-        BRDF brdf = GetBRDF(surface, true);
+            BRDF brdf = GetBRDF(surface, true);
     #else
         BRDF brdf = GetBRDF(surface);
     #endif

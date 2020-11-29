@@ -50,4 +50,18 @@ ShadowData GetShadowData(Surface surface){
     return data;
 }
 
+struct OtherShadowData
+{
+    float strength;
+    int shadowMaskChannel;
+};
+
+float GetOtherShadowAttenuation(
+    OtherShadowData other, ShadowData global, Surface surfaceWS
+)
+{
+    #if !defined(_RECEIVE_SHADOWS)
+        return 1.0;
+    #endif
+}
 #endif

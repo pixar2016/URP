@@ -39,12 +39,12 @@ Shader "PixarRenderPipeline/MyLit"{
     }
 
     SubShader{
-        Tags { "RenderType" = "Opaque" }
+        //Tags { "RenderType" = "Opaque" }
         Pass{
 
-            /*Tags {
+            Tags {
 				"LightMode" = "CustomLit"
-			}*/
+			}
 			Blend [_SrcBlend] [_DstBlend]
             ZWrite [_ZWrite]
 

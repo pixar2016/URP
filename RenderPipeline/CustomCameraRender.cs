@@ -111,14 +111,20 @@ namespace Pixar
             {
                 enableDynamicBatching = useDynamicBatching,
                 enableInstancing = useGPUInstancing,
-                perObjectData =
-                    PerObjectData.ReflectionProbes |
+                perObjectData = PerObjectData.ReflectionProbes |
                     PerObjectData.Lightmaps | PerObjectData.ShadowMask |
                     PerObjectData.LightProbe | PerObjectData.OcclusionProbe |
                     PerObjectData.LightProbeProxyVolume |
-                    PerObjectData.OcclusionProbeProxyVolume |
-                    lightsPerObjectFlags
+                    PerObjectData.OcclusionProbeProxyVolume
+                //perObjectData =
+                //    PerObjectData.ReflectionProbes |
+                //    PerObjectData.Lightmaps | PerObjectData.ShadowMask |
+                //    PerObjectData.LightProbe | PerObjectData.OcclusionProbe |
+                //    PerObjectData.LightProbeProxyVolume |
+                //    PerObjectData.OcclusionProbeProxyVolume |
+                //    lightsPerObjectFlags
             };
+            drawSettings.SetShaderPassName(1, litShaderTagId);
 
             var filterSettings = new FilteringSettings(RenderQueueRange.opaque);
 
