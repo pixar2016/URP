@@ -22,6 +22,7 @@ CBUFFER_END
 struct Light{
     float3 color;
     float3 direction;
+    float attenuation;
 };
 
 DirectionalShadowData GetDirectionalShadowData(int lightIndex, ShadowData shadowData){
