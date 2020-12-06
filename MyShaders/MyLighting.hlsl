@@ -2,7 +2,7 @@
 #define PIXAR_LIGHTING_INCLUDED
 
 float3 IncomingLight(Surface surface, Light light){
-    return saturate(dot(surface.normal, light.direction)) * light.color;
+    return saturate(dot(surface.normal, light.direction) * light.attenuation) * light.color;
 }
 
 float3 GetLighting(Surface surface, BRDF brdf, Light light){
@@ -16,6 +16,11 @@ float3 GetLighting(Surface surface, BRDF brdf, GI gi){
     float3 color = IndirectBRDF(surface, brdf, gi.diffuse, gi.specular);
     for(int i = 0; i < GetDirectionalLightCount(); i++){
         Light light = GetDirectionalLight(i, surface, shadowData);
+        color += GetLighting(surface, brdf, light);
+    }
+    for (int j = 0; j < GetOtherLightCount(); j++)
+    {
+        Light light = GetOtherLight(j, surface, shadowData);
         color += GetLighting(surface, brdf, light);
     }
     return color;

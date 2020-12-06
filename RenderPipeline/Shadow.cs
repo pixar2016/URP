@@ -141,10 +141,10 @@ namespace Pixar
             {
                 RenderDirectionalShadows();
             }
-            buffer.BeginSample(bufferName);
+            //buffer.BeginSample(bufferName);
             SetKeywords(shadowMaskKeywords, useShadowMask?
                 QualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask ? 0 : 1 : -1);
-            buffer.EndSample(bufferName);
+            //buffer.EndSample(bufferName);
             ExecuteBuffer();
         }
 
@@ -166,7 +166,7 @@ namespace Pixar
             int split = tiles <= 1 ? 1 : tiles <= 4 ? 2 : 4;
             int tileSize = atlasSize / split;
 
-            for(int i = 0; i < shadowedDirLightCount; i++)
+            for (int i = 0; i < shadowedDirLightCount; i++)
             {
                 RenderDirectionalShadows(i, split, tileSize);
             }

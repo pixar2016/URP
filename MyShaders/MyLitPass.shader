@@ -39,7 +39,11 @@ Shader "PixarRenderPipeline/MyLit"{
     }
 
     SubShader{
-        //Tags { "RenderType" = "Opaque" }
+        HLSLINCLUDE
+        #include "Common.hlsl"
+        #include "MyLitInput.hlsl"
+        #pragma enable_d3d11_debug_symbols
+        ENDHLSL
         Pass{
 
             Tags {
@@ -50,8 +54,8 @@ Shader "PixarRenderPipeline/MyLit"{
 
             HLSLPROGRAM
             #pragma target 3.5
-            #pragma multi_compile_instancing
-            #pragma enable_d3d11_debug_symbols
+            //#pragma multi_compile_instancing
+            
             #pragma shader_feature _CLIPPING
 			#pragma shader_feature _RECEIVE_SHADOWS
 			#pragma shader_feature _PREMULTIPLY_ALPHA
@@ -68,6 +72,19 @@ Shader "PixarRenderPipeline/MyLit"{
             #pragma vertex LitPassVertex
             #pragma fragment LitPassFragment
             #include "MyLitPass.hlsl"
+            ENDHLSL
+        }
+
+        Pass{
+            Tags{
+                "LightMode" =  "ShadowCaster"
+            }
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma multi_compile_instancing
+            #pragma vertex ShadowCasterPassVertex
+            #pragma fragment ShadowCasterPassFragment
+            #include "MyShadowCasterPass.hlsl"
             ENDHLSL
         }
     }

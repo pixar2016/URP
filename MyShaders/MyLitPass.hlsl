@@ -2,13 +2,11 @@
 #define PIXAR_LIT_PASS_INCLUDED
 
 #include "MySurface.hlsl"
-#include "Common.hlsl"
 #include "MyShadows.hlsl"
 #include "MyLight.hlsl"
 #include "MyBRDF.hlsl"
 #include "MyGI.hlsl"
 #include "MyLighting.hlsl"
-#include "MyLitInput.hlsl"
 
 struct Attributes{
     float3 positionOS : POSITION;
@@ -62,13 +60,13 @@ float4 LitPassFragment(Varyings input):SV_TARGET{
     surface.dither = InterleavedGradientNoise(input.positionCS.xy, 0);
 
     #if defined(_PREMULTIPLY_ALPHA)
-            BRDF brdf = GetBRDF(surface, true);
+        BRDF brdf = GetBRDF(surface, true);
     #else
         BRDF brdf = GetBRDF(surface);
     #endif
     GI gi = GetGI(GI_FRAGMENT_DATA(input), surface, brdf);
     float3 color = GetLighting(surface, brdf, gi);
-    color += GetEmission(input.baseUV);
+    //color += GetEmission(input.baseUV);
     return float4(color, surface.alpha);
 }
 
