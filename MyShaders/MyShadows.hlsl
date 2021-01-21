@@ -3,6 +3,17 @@
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Shadow/ShadowSamplingTent.hlsl"
 
+#if defined(_DIRECTIONAL_PCF3)
+    #define DIRECTIONAL_FILTER_SAMPLES 4
+    #define DIRECTIONAL_FILTER_SETUP SampleShadow_ComputeSamples_Tent_3x3
+#elif defined(_DIRECTIONAL_PCF5)
+    #define DIRECTIONAL_FILTER_SAMPLES 9
+	#define DIRECTIONAL_FILTER_SETUP SampleShadow_ComputeSamples_Tent_5x5
+#elif defined(_DIRECTIONAL_PCF7)
+    #define DIRECTIONAL_FILTER_SAMPLES 16
+	#define DIRECTIONAL_FILTER_SETUP SampleShadow_ComputeSamples_Tent_7x7
+#endif
+
 #define MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT 4
 #define MAX_CASCADE_COUNT 4
 
@@ -51,7 +62,21 @@ float SampleDirectionalShadowAtlas(float3 position)
 
 float FilterDirectionalShadow(float3 position)
 {
-    return SampleDirectionalShadowAtlas(position);
+    #if defined(DIRECTIONAL_FILTER_SETUP)
+        float weights[DIRECTIONAL_FILTER_SAMPLES];
+        float2 positions[DIRECTIONAL_FILTER_SAMPLES];
+        float4 size = _ShadowAtlasSize.yyxx;
+        DIRECTIONAL_FILTER_SETUP(size, position.xy, weights, positions);
+        float shadow = 0;
+        for(int i = 0; i < DIRECTIONAL_FILTER_SAMPLES; i++){
+            shadow += weights[i] * SampleDirectionalShadowAtlas(
+                float3(positions[i].xy, position.z)
+            );
+        }
+        return shadow;
+    #else
+        return SampleDirectionalShadowAtlas(position);
+    #endif
 }
 
 float GetBakedShadow(ShadowMask mask, int channel)
@@ -133,6 +158,25 @@ float GetCascadedShadow(
     return shadow;
 }
 
+float MixBakedAndRealtimeShadows(
+    ShadowData global, float shadow, int shadowMaskChannel,float strength
+)
+{
+    float baked = GetBakedShadow(global.shadowMask, shadowMaskChannel,strength);
+    if (global.shadowMask.always)
+    {
+        shadow = lerp(1.0, shadow, global.strength);
+        shadow = min(baked, shadow);
+        return lerp(1.0, shadow, strength);
+    }
+    if (global.shadowMask.distance)
+    {
+        shadow = lerp(baked, shadow, global.strength);
+        return lerp(1.0, shadow, strength);
+    }
+    return lerp(1.0, shadow, strength * global.strength);
+}
+
 float GetDirectionalShadowAttenuation(
     DirectionalShadowData directional, ShadowData global, Surface surfaceWS
 ){
@@ -151,7 +195,13 @@ float GetDirectionalShadowAttenuation(
     else
     {
         shadow = GetCascadedShadow(directional, global, surfaceWS);
+        shadow = MixBakedAndRealtimeShadows(global, shadow, directional.shadowMaskChannel, directional.strength);
     }
+    //shadow = GetBakedShadow(
+    //        global.shadowMask, directional.shadowMaskChannel,
+    //        abs(directional.strength)
+    //    );
+    //shadow = GetCascadedShadow(directional, global, surfaceWS);
     return shadow;
 }
 

@@ -79,13 +79,33 @@ Shader "PixarRenderPipeline/MyLit"{
             Tags{
                 "LightMode" =  "ShadowCaster"
             }
+
+            ColorMask 0
+
             HLSLPROGRAM
             #pragma target 3.5
+            #pragma shader_feature _ _SHADOWS_CLIP _SHADOWS_DITHER
             #pragma multi_compile_instancing
             #pragma vertex ShadowCasterPassVertex
             #pragma fragment ShadowCasterPassFragment
             #include "MyShadowCasterPass.hlsl"
             ENDHLSL
         }
+
+        Pass{
+            Tags{
+                "LightMode" = "Meta"
+            }
+
+            Cull Off
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex MetaPassVertex
+            #pragma fragment MetaPassFragment
+            #include "MetaPass.hlsl"
+            ENDHLSL
+        }
     }
+    CustomEditor "LitShaderGUI"
 }

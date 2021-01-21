@@ -47,12 +47,19 @@ public class LitShaderGUI : ShaderGUI
         }
     }
 
-    CullMode Cull
+    //CullMode Cull
+    //{
+    //    set
+    //    {
+    //        FindProperty("_Cull", properties).floatValue = (float)value;
+    //    }
+    //}
+
+    bool HasPremultiplyAlpha => HasProperty("_PremulAlpha");
+
+    bool PremultiplyAlpha
     {
-        set
-        {
-            FindProperty("_Cull", properties).floatValue = (float)value;
-        }
+        set => SetProperty("_PremulAlpha", "_PREMULTIPLY_ALPHA", value);
     }
 
     BlendMode SrcBlend
@@ -79,13 +86,36 @@ public class LitShaderGUI : ShaderGUI
         }
     }
 
+    enum ShadowMode
+    {
+        On, Clip, Dither, Off
+    }
+
+    ShadowMode Shadows
+    {
+        set
+        {
+            if(SetProperty("_Shadows", (float)value))
+            {
+                SetKeywordEnabled("_SHADOWS_CLIP", value == ShadowMode.Clip);
+                SetKeywordEnabled("_SHADOWS_DITHER", value == ShadowMode.Dither);
+            }
+        }
+    }
+
+    bool HasProperty(string name) =>
+        FindProperty(name, properties, false) != null;
+
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
     {
+        EditorGUI.BeginChangeCheck();
         base.OnGUI(materialEditor, properties);
 
         editor = materialEditor;
         materials = materialEditor.targets;
         this.properties = properties;
+
+        BakedEmission();
 
         EditorGUILayout.Space();
         showPresets = EditorGUILayout.Foldout(showPresets, "Presets", true);
@@ -96,6 +126,44 @@ public class LitShaderGUI : ShaderGUI
             ClipDoubleSidedPreset();
             FadePreset();
             FadeWithShadowsPreset();
+            TransparentPreset();
+        }
+
+        if (EditorGUI.EndChangeCheck())
+        {
+            SetShadowCasterPass();
+            CopyLightMappingProperties();
+        }
+    }
+
+    void CopyLightMappingProperties()
+    {
+        MaterialProperty mainTex = FindProperty("_MainTex", properties, false);
+        MaterialProperty baseMap = FindProperty("_BaseMap", properties, false);
+        if(mainTex != null && baseMap != null)
+        {
+            mainTex.textureValue = baseMap.textureValue;
+            mainTex.textureScaleAndOffset = baseMap.textureScaleAndOffset;
+        }
+        MaterialProperty color = FindProperty("_Color", properties, false);
+        MaterialProperty baseColor = FindProperty("_BaseColor", properties, false);
+        if(color != null && baseColor != null)
+        {
+            color.colorValue = baseColor.colorValue;
+        }
+    }
+
+    void BakedEmission()
+    {
+        EditorGUI.BeginChangeCheck();
+        editor.LightmapEmissionProperty();
+        if (EditorGUI.EndChangeCheck())
+        {
+            foreach(Material m in editor.targets)
+            {
+                m.globalIlluminationFlags &=
+                    ~MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+            }
         }
     }
 
@@ -125,7 +193,7 @@ public class LitShaderGUI : ShaderGUI
         }
         editor.RegisterPropertyChangeUndo("Opaque Preset");
         Clipping = ClipMode.Off;
-        Cull = CullMode.Off;
+        //Cull = CullMode.Off;
         SrcBlend = BlendMode.One;
         DstBlend = BlendMode.Zero;
         ZWrite = true;
@@ -142,7 +210,7 @@ public class LitShaderGUI : ShaderGUI
         }
         editor.RegisterPropertyChangeUndo("Clip Preset");
         Clipping = ClipMode.On;
-        Cull = CullMode.Back;
+        //Cull = CullMode.Back;
         SrcBlend = BlendMode.One;
         DstBlend = BlendMode.Zero;
         ZWrite = true;
@@ -159,7 +227,7 @@ public class LitShaderGUI : ShaderGUI
         }
         editor.RegisterPropertyChangeUndo("Clip Double-Sided Preset");
         Clipping = ClipMode.On;
-        Cull = CullMode.Off;
+        //Cull = CullMode.Off;
         SrcBlend = BlendMode.One;
         DstBlend = BlendMode.Zero;
         ZWrite = true;
@@ -176,7 +244,7 @@ public class LitShaderGUI : ShaderGUI
         }
         editor.RegisterPropertyChangeUndo("Fade Preset");
         Clipping = ClipMode.Off;
-        Cull = CullMode.Back;
+        //Cull = CullMode.Back;
         SrcBlend = BlendMode.SrcAlpha;
         DstBlend = BlendMode.OneMinusSrcAlpha;
         ZWrite = false;
@@ -193,13 +261,26 @@ public class LitShaderGUI : ShaderGUI
         }
         editor.RegisterPropertyChangeUndo("Fade with Shadows Preset");
         Clipping = ClipMode.Shadows;
-        Cull = CullMode.Back;
+        //Cull = CullMode.Back;
         SrcBlend = BlendMode.SrcAlpha;
         DstBlend = BlendMode.OneMinusSrcAlpha;
         ZWrite = false;
         ReceiveShadows = true;
         SetPassEnabled("ShadowCaster", true);
         RenderQueue = RenderQueue.Transparent;
+    }
+
+    void TransparentPreset()
+    {
+        if(HasPremultiplyAlpha && GUILayout.Button("Transparent"))
+        {
+            Clipping = ClipMode.Shadows;
+            //Cull = CullMode.Back;
+            SrcBlend = BlendMode.One;
+            DstBlend = BlendMode.OneMinusSrcAlpha;
+            ZWrite = false;
+            RenderQueue = RenderQueue.Transparent;
+        }
     }
 
     void SetPassEnabled(string pass, bool enabled)
@@ -223,6 +304,25 @@ public class LitShaderGUI : ShaderGUI
         return enabled;
     }
 
+    void SetProperty(string name, string keyword, bool value)
+    {
+        if (SetProperty(name, value ? 1f : 0f))
+        {
+            SetKeywordEnabled(keyword, value);
+        }
+    }
+
+    bool SetProperty(string name, float value)
+    {
+        MaterialProperty property = FindProperty(name, properties, false);
+        if(property != null)
+        {
+            property.floatValue = value;
+            return true;
+        }
+        return false;
+    }
+
     void SetKeywordEnabled(string keyword, bool enabled)
     {
         if (enabled)
@@ -238,6 +338,20 @@ public class LitShaderGUI : ShaderGUI
             {
                 m.DisableKeyword(keyword);
             }
+        }
+    }
+
+    void SetShadowCasterPass()
+    {
+        MaterialProperty shadows = FindProperty("_Shadows", properties, false);
+        if(shadows == null || shadows.hasMixedValue)
+        {
+            return;
+        }
+        bool enabled = shadows.floatValue < (float)ShadowMode.Off;
+        foreach (Material m in materials)
+        {
+            m.SetShaderPassEnabled("ShadowCaster", enabled);
         }
     }
 }

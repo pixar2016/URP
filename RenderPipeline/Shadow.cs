@@ -15,7 +15,7 @@ namespace Pixar
         {
             "_DIRECTIONAL_PCF3",
             "_DIRECTIONAL_PCF5",
-            "_DIRECTIONAL_PCF7subli",
+            "_DIRECTIONAL_PCF7",
         };
         static string[] cascadeBlendKeywords = {
             "_CASCADE_BLEND_SOFT",
@@ -141,10 +141,10 @@ namespace Pixar
             {
                 RenderDirectionalShadows();
             }
-            //buffer.BeginSample(bufferName);
+            buffer.BeginSample(bufferName);
             SetKeywords(shadowMaskKeywords, useShadowMask?
                 QualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask ? 0 : 1 : -1);
-            //buffer.EndSample(bufferName);
+            buffer.EndSample(bufferName);
             ExecuteBuffer();
         }
 
