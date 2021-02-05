@@ -9,7 +9,7 @@ namespace Pixar
     {
         const string bufferName = "Shadows";
 
-        const int maxShadowedDirLightCount = 4, maxCascades = 4;
+        const int maxShadowedDirLightCount = 4, maxCascades = 4, maxShadowedOtherLightCount = 16;
 
         static string[] directionalFilterKeywords =
         {
@@ -28,6 +28,10 @@ namespace Pixar
         };
         static int dirShadowAtlasId = Shader.PropertyToID("_DirectionalShadowAtlas");
         static int dirShadowMatricesId = Shader.PropertyToID("_DirectionalShadowMatrices");
+
+        static int otherShadowAtlasId = Shader.PropertyToID("_OtherShadowAtlas");
+        static int otherShadowMatricesId = Shader.PropertyToID("_OtherShadowMatrices");
+        static int otherShadowTilesId = Shader.PropertyToID("_OtherShadowTiles");
         static int cascadeCountId = Shader.PropertyToID("_CascadeCount");
         static int cascadeCullingSphereId = Shader.PropertyToID("_CascadeCullingSpheres");
         static int cascadeDataId = Shader.PropertyToID("_CascadeData");
