@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Code Editors
+/*.csproj
+/*.sln
+/.vs
+
+# Unity
+/Library
+/Logs
+/Temp
