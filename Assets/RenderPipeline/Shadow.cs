@@ -191,14 +191,38 @@ namespace Pixar
             {
                 RenderDirectionalShadows();
             }
+            else
+            {
+                buffer.GetTemporaryRT(
+                    dirShadowAtlasId, 1, 1,
+                    32, FilterMode.Bilinear, RenderTextureFormat.Shadowmap
+                );
+            }
 
             if(shadowedOtherLightCount > 0)
             {
                 RenderOtherShadow();
             }
+            else
+            {
+                buffer.SetGlobalTexture(otherShadowAtlasId, dirShadowAtlasId);
+            }
             buffer.BeginSample(bufferName);
             SetKeywords(shadowMaskKeywords, useShadowMask?
                 QualitySettings.shadowmaskMode == ShadowmaskMode.Shadowmask ? 0 : 1 : -1);
+            buffer.SetGlobalInt(
+                cascadeCountId,
+                shadowedDirLightCount > 0 ? settings.directional.cascadeCount : 0
+            );
+
+            float f = 1f - settings.directional.cascadeFade;
+            buffer.SetGlobalVector(
+                shadowDistanceFadeId, new Vector4(
+                    1f / settings.maxDistance, 1f / settings.distanceFade,
+                    1f / (1f - f*f)
+                )
+            );
+            buffer.SetGlobalVector(shadowAtlasSizeId, atlasSizes);
             buffer.EndSample(bufferName);
             ExecuteBuffer();
         }
@@ -264,26 +288,15 @@ namespace Pixar
                 RenderDirectionalShadows(i, split, tileSize);
             }
 
-            buffer.SetGlobalInt(cascadeCountId, settings.directional.cascadeCount);
             buffer.SetGlobalVectorArray(cascadeCullingSphereId, cascadeCullingSpheres);
             buffer.SetGlobalVectorArray(cascadeDataId, cascadeData);
             buffer.SetGlobalMatrixArray(dirShadowMatricesId, dirShadowMatrices);
-            float f = 1f - settings.directional.cascadeFade;
-            buffer.SetGlobalVector(
-                shadowDistanceFadeId, new Vector4(
-                    1f / settings.maxDistance, 1f / settings.distanceFade,
-                    1f / (1f - f * f)
-                )
-            );
 
             SetKeywords(
                 directionalFilterKeywords, (int)settings.directional.filter - 1
             );
             SetKeywords(
                 cascadeBlendKeywords, (int)settings.directional.cascadeBlend - 1
-            );
-            buffer.SetGlobalVector(
-                shadowAtlasSizeId, new Vector4(atlasSize, 1f / atlasSize)
             );
             buffer.EndSample(bufferName);
             ExecuteBuffer();
