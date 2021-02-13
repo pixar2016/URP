@@ -158,7 +158,7 @@ namespace Pixar
 
                 bool isPoint = light.type == LightType.Point;
                 int newLightCount = shadowedOtherLightCount + (isPoint ? 6 : 1);
-                if(newLightCount > maxShadowedDirLightCount ||
+                if(newLightCount > maxShadowedOtherLightCount ||
                     !cullingResults.GetShadowCasterBounds(visibleLightIndex, out Bounds b))
                 {
                     return new Vector4(-light.shadowStrength, 0f, 0f, maskChannel);
@@ -194,7 +194,7 @@ namespace Pixar
 
             if(shadowedOtherLightCount > 0)
             {
-                RenderOtherShadow();
+                RenderOtherShadows();
             }
             buffer.BeginSample(bufferName);
             SetKeywords(shadowMaskKeywords, useShadowMask?
@@ -304,18 +304,21 @@ namespace Pixar
             }
         }
 
-        void RenderOtherShadow()
+        void RenderOtherShadows()
         {
             int atlasSize = (int)settings.other.atlasSize;
             atlasSizes.z = atlasSize;
             atlasSizes.w = 1f / atlasSize;
             buffer.GetTemporaryRT(
                 otherShadowAtlasId, atlasSize, atlasSize,
-                32, FilterMode.Bilinear, RenderTextureFormat.Shadowmap);
+                32, FilterMode.Bilinear, RenderTextureFormat.Shadowmap
+            );
             buffer.SetRenderTarget(
                 otherShadowAtlasId,
-                RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+                RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store
+            );
             buffer.ClearRenderTarget(true, false, Color.clear);
+            //buffer.SetGlobalFloat(shadowPancakingId, 0f);
             buffer.BeginSample(bufferName);
             ExecuteBuffer();
 
@@ -323,7 +326,7 @@ namespace Pixar
             int split = tiles <= 1 ? 1 : tiles <= 4 ? 2 : 4;
             int tileSize = atlasSize / split;
 
-            for(int i = 0; i < shadowedOtherLightCount;)
+            for (int i = 0; i < shadowedOtherLightCount;)
             {
                 if (shadowedOtherLights[i].isPoint)
                 {
@@ -339,7 +342,9 @@ namespace Pixar
 
             buffer.SetGlobalMatrixArray(otherShadowMatricesId, otherShadowMatrices);
             buffer.SetGlobalVectorArray(otherShadowTilesId, otherShadowTiles);
-            SetKeywords(otherFilterKeywords, (int)settings.other.filter - 1);
+            SetKeywords(
+                otherFilterKeywords, (int)settings.other.filter - 1
+            );
             buffer.EndSample(bufferName);
             ExecuteBuffer();
         }
@@ -347,17 +352,23 @@ namespace Pixar
         void RenderSpotShadows(int index, int split, int tileSize)
         {
             ShadowedOtherLight light = shadowedOtherLights[index];
-            var shadowSettings = new ShadowDrawingSettings(cullingResults, light.visibleLightIndex);
+            var shadowSettings =
+                new ShadowDrawingSettings(cullingResults, light.visibleLightIndex);
             cullingResults.ComputeSpotShadowMatricesAndCullingPrimitives(
                 light.visibleLightIndex, out Matrix4x4 viewMatrix,
-                out Matrix4x4 projectionMatrix, out ShadowSplitData splitData);
+                out Matrix4x4 projectionMatrix, out ShadowSplitData splitData
+            );
             shadowSettings.splitData = splitData;
-            float bias = 0f;
+            float texelSize = 2f / (tileSize * projectionMatrix.m00);
+            float filterSize = texelSize * ((float)settings.other.filter + 1f);
+            float bias = light.normalBias * filterSize * 1.4142136f;
             Vector2 offset = SetTileViewport(index, split, tileSize);
             float tileScale = 1f / split;
             SetOtherTileData(index, offset, tileScale, bias);
             otherShadowMatrices[index] = ConvertToAtlasMatrix(
-                projectionMatrix * viewMatrix, offset, tileScale);
+                projectionMatrix * viewMatrix, offset, tileScale
+            );
+
             buffer.SetViewProjectionMatrices(viewMatrix, projectionMatrix);
             buffer.SetGlobalDepthBias(0f, light.slopeScaleBias);
             ExecuteBuffer();
@@ -368,17 +379,21 @@ namespace Pixar
         void RenderPointShadows(int index, int split, int tileSize)
         {
             ShadowedOtherLight light = shadowedOtherLights[index];
-            var shadowSettings = new ShadowDrawingSettings(cullingResults, light.visibleLightIndex);
+            var shadowSettings =
+                new ShadowDrawingSettings(cullingResults, light.visibleLightIndex);
+            float texelSize = 2f / tileSize;
+            float filterSize = texelSize * ((float)settings.other.filter + 1f);
+            float bias = light.normalBias * filterSize * 1.4142136f;
             float tileScale = 1f / split;
-            float filterSize = 0f;
-            float bias = 0f;
-            float fovBias = Mathf.Atan(1f + bias + filterSize) * Mathf.Rad2Deg * 2f - 90f;
-            for(int i = 0; i < 6; i++)
+            float fovBias =
+                Mathf.Atan(1f + bias + filterSize) * Mathf.Rad2Deg * 2f - 90f;
+            for (int i = 0; i < 6; i++)
             {
                 cullingResults.ComputePointShadowMatricesAndCullingPrimitives(
                     light.visibleLightIndex, (CubemapFace)i, fovBias,
                     out Matrix4x4 viewMatrix, out Matrix4x4 projectionMatrix,
-                    out ShadowSplitData splitData);
+                    out ShadowSplitData splitData
+                );
                 viewMatrix.m11 = -viewMatrix.m11;
                 viewMatrix.m12 = -viewMatrix.m12;
                 viewMatrix.m13 = -viewMatrix.m13;
@@ -387,8 +402,9 @@ namespace Pixar
                 int tileIndex = index + i;
                 Vector2 offset = SetTileViewport(tileIndex, split, tileSize);
                 SetOtherTileData(tileIndex, offset, tileScale, bias);
-                otherShadowMatrices[index] = ConvertToAtlasMatrix(
-                    projectionMatrix * viewMatrix, offset, tileScale);
+                otherShadowMatrices[tileIndex] = ConvertToAtlasMatrix(
+                    projectionMatrix * viewMatrix, offset, tileScale
+                );
 
                 buffer.SetViewProjectionMatrices(viewMatrix, projectionMatrix);
                 buffer.SetGlobalDepthBias(0f, light.slopeScaleBias);

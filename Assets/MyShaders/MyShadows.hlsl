@@ -15,6 +15,7 @@
 #endif
 
 #define MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT 4
+#define MAX_SHADOWED_OTHER_LIGHT_COUNT 16
 #define MAX_CASCADE_COUNT 4
 
 TEXTURE2D_SHADOW(_DirectionalShadowAtlas);
@@ -26,7 +27,9 @@ CBUFFER_START(_PixarShadows)
     int _CascadeCount;
     float4 _CascadeCullingSpheres[MAX_CASCADE_COUNT];
     float4 _CascadeData[MAX_CASCADE_COUNT];
-float4x4 _DirectionalShadowMatrices[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
+    float4x4 _DirectionalShadowMatrices[MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT];
+    float4x4 _OtherShadowMatrices[MAX_SHADOWED_OTHER_LIGHT_COUNT];
+    float4 _OtherShadowTiles[MAX_SHADOWED_OTHER_LIGHT_COUNT];
     float4 _ShadowAtlasSize;
     float4 _ShadowDistanceFade;
 CBUFFER_END
@@ -209,7 +212,46 @@ struct OtherShadowData
 {
     float strength;
     int shadowMaskChannel;
+    int tileIndex;
+    bool isPoint;
+    float3 lightPositionWS;
+    float3 lightDirectionWS;
+    float3 spotDirectionWS;
 };
+
+float SampleOtherShadowAtlas(float3 positionSTS, float3 bounds){
+    positionSTS.xy = clamp(positionSTS.xy, bounds.xy, bounds.xy + bounds.z);
+    return SAMPLE_TEXTURE2D_SHADOW(_OtherShadowAtlas, SHADOW_SAMPLER, positionSTS);
+}
+
+float FilterOtherShadow(float3 positionSTS, float3 bounds){
+    return SampleOtherShadowAtlas(positionSTS, bounds);
+}
+
+static const float3 pointShadowPlanes[6] = {
+	float3(-1.0, 0.0, 0.0),
+	float3(1.0, 0.0, 0.0),
+	float3(0.0, -1.0, 0.0),
+	float3(0.0, 1.0, 0.0),
+	float3(0.0, 0.0, -1.0),
+	float3(0.0, 0.0, 1.0)
+};
+
+float GetOtherShadow(OtherShadowData other, ShadowData global, Surface surfaceWS){
+    float tileIndex = other.tileIndex;
+    float3 lightPlane = other.spotDirectionWS;
+    if(other.isPoint){
+        float faceOffset = CubeMapFaceID(-other.lightDirectionWS);
+        tileIndex += faceOffset;
+        lightPlane = pointShadowPlanes[faceOffset];
+    }
+    float4 tileData = _OtherShadowTiles[tileIndex];
+    float3 surfaceToLight = other.lightPositionWS - surfaceWS.position;
+    float distanceToLightPlane = dot(surfaceToLight, lightPlane);
+    float3 normalBias = surfaceWS.interpolatedNormal * (distanceToLightPlane * tileData.w);
+    float4 positionSTS = mul(_OtherShadowMatrices[tileIndex], float4(surfaceWS.position + normalBias, 1.0));
+    return FilterOtherShadow(positionSTS.xyz / positionSTS.w, tileData.xyz);
+}
 
 float GetOtherShadowAttenuation(
     OtherShadowData other, ShadowData global, Surface surfaceWS
@@ -219,7 +261,7 @@ float GetOtherShadowAttenuation(
         return 1.0;
     #endif
     float shadow;
-    if (other.strength > 0.0)
+    if (other.strength * global.strength <= 0.0)
     {
         shadow = GetBakedShadow(
             global.shadowMask, other.shadowMaskChannel, other.strength
@@ -227,7 +269,8 @@ float GetOtherShadowAttenuation(
     }
     else
     {
-        shadow = 1.0;
+        shadow = GetOtherShadow(other, global, surfaceWS);
+        shadow = MixBakedAndRealtimeShadows(global, shadow, other.shadowMaskChannel, other.strength);
     }
     return shadow;
 }
