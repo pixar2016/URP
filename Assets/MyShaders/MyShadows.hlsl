@@ -218,7 +218,7 @@ struct OtherShadowData
 {
     float strength;
     int tileIndex;
-    bool isPoint
+    bool isPoint;
     int shadowMaskChannel;
     float3 lightPositionWS;
     float3 lightDirectionWS;
@@ -262,7 +262,9 @@ float FilterOtherShadow(float3 positionSTS, float3 bounds){
 float GetOtherShadow(
     OtherShadowData other, ShadowData global, Surface surfaceWS
 ){
-    float tileData = _OtherShadowTiles[tileIndex];
+	float tileIndex = other.tileIndex;
+	float3 lightPlane = other.spotDirectionWS;
+    float4 tileData = _OtherShadowTiles[tileIndex];
     float3 surfaceToLight = other.lightPositionWS - surfaceWS.position;
     float distanceToLightPlane = dot(surfaceToLight, lightPlane);
     float3 normalBias =

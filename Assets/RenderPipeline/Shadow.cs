@@ -268,6 +268,8 @@ namespace Pixar
         void RenderDirectionalShadows()
         {
             int atlasSize = (int)settings.directional.atlasSize;
+            atlasSizes.x = atlasSize;
+            atlasSizes.y = 1f / atlasSize;
             buffer.GetTemporaryRT(
                 dirShadowAtlasId, atlasSize, atlasSize,
                 32, FilterMode.Bilinear, RenderTextureFormat.Shadowmap);
