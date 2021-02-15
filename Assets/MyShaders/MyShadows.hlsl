@@ -264,6 +264,11 @@ float GetOtherShadow(
 ){
 	float tileIndex = other.tileIndex;
 	float3 lightPlane = other.spotDirectionWS;
+    if(other.isPoint){
+        float faceOffset = CubeMapFaceID(-other.lightDirectionWS);
+        tileIndex += faceOffset;
+        lightPlane = pointShadowPlanes[faceOffset];
+    }
     float4 tileData = _OtherShadowTiles[tileIndex];
     float3 surfaceToLight = other.lightPositionWS - surfaceWS.position;
     float distanceToLightPlane = dot(surfaceToLight, lightPlane);
