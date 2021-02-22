@@ -16,11 +16,14 @@ namespace Pixar
         [SerializeField]
         ShadowSettings shadows = default;
 
+        [SerializeField]
+        PostFxSettings postFxSettings = default;
+
         protected override RenderPipeline CreatePipeline()
         {
             return new CustomRenderPipeline(
                 useDynamicBatching, useGPUInstancing, useSRPBatcher,
-                useLightsPerObject, shadows);
+                useLightsPerObject, shadows, postFxSettings);
         }
     }
 }

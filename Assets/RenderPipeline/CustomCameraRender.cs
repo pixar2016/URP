@@ -12,6 +12,8 @@ namespace Pixar
             unlitShaderTagId = new ShaderTagId("SRPDefaultUnlit"),
             litShaderTagId = new ShaderTagId("CustomLit");
 
+        static int frameBufferId = Shader.PropertyToID("_CameraFrameBuffer");
+
         CommandBuffer buffer = new CommandBuffer
         {
             name = bufferName
@@ -25,12 +27,14 @@ namespace Pixar
 
         Lighting lighting = new Lighting();
 
+        PostFxStack postFxStack = new PostFxStack();
+
         string SampleName { get; set; }
 
         public void Render(
             ScriptableRenderContext context, Camera camera,
             bool useDynamicBatching, bool useGPUInstancing, bool useLightsPerObject,
-            ShadowSettings shadowSettings
+            ShadowSettings shadowSettings, PostFxSettings postFxSettings
         )
         {
             this.context = context;
@@ -47,12 +51,17 @@ namespace Pixar
             ExecuteBuffer();
             lighting.Setup(
                 context, cullingResults, shadowSettings, useLightsPerObject);
+            postFxStack.Setup(context, camera, postFxSettings);
             buffer.EndSample(SampleName);
             Setup();
             DrawVisibleGeometry(useDynamicBatching, useGPUInstancing, useLightsPerObject);
             DrawUnsupportedShaders();
             DrawGizmos();
-            lighting.Cleanup();
+            if (postFxStack.IsActive)
+            {
+                postFxStack.Render(frameBufferId);
+            }
+            Cleanup();
             Submit();
         }
 
@@ -71,6 +80,20 @@ namespace Pixar
         {
             context.SetupCameraProperties(camera);
             CameraClearFlags flags = camera.clearFlags;
+
+            if (postFxStack.IsActive)
+            {
+                if(flags > CameraClearFlags.Color)
+                {
+                    flags = CameraClearFlags.Color;
+                }
+
+                buffer.GetTemporaryRT(frameBufferId, camera.pixelWidth, camera.pixelHeight,
+                    32, FilterMode.Bilinear, RenderTextureFormat.Default);
+
+                buffer.SetRenderTarget(frameBufferId, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+
+            }
             buffer.ClearRenderTarget(
                 flags <= CameraClearFlags.Depth,
                 flags == CameraClearFlags.Color,
@@ -79,6 +102,15 @@ namespace Pixar
             );
             buffer.BeginSample(SampleName);
             ExecuteBuffer();
+        }
+
+        void Cleanup()
+        {
+            lighting.Cleanup();
+            if (postFxStack.IsActive)
+            {
+                buffer.ReleaseTemporaryRT(frameBufferId);
+            }
         }
 
         void Submit()

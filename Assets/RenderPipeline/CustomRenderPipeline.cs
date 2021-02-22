@@ -11,10 +11,13 @@ namespace Pixar
 
         ShadowSettings shadowSettings;
 
+        PostFxSettings postFxSettings;
+
         public CustomRenderPipeline(
             bool useDynamicBatching, bool useGPUInstancing, bool useSRPBatcher,
-            bool useLightsPerObject, ShadowSettings shadowSettings)
+            bool useLightsPerObject, ShadowSettings shadowSettings, PostFxSettings postFxSettings)
         {
+            this.postFxSettings = postFxSettings;
             this.shadowSettings = shadowSettings;
             this.useDynamicBatching = useDynamicBatching;
             this.useGPUInstancing = useGPUInstancing;
@@ -31,7 +34,7 @@ namespace Pixar
                 renderer.Render(
                     context, camera,
                     useDynamicBatching, useGPUInstancing, useLightsPerObject,
-                    shadowSettings);
+                    shadowSettings, postFxSettings);
             }
         }
     }
